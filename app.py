@@ -1,34 +1,31 @@
 import streamlit as st
-import google.generativeai as genai
-import os
+from openai import OpenAI
 
-st.set_page_config(page_title="Logistics AI Pro", page_icon="")
-st.title(" Logistics Expert (Zaw's Pro)")
+# Streamlit Secrets ကနေ Key ကိုယူမယ်
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# API Key ကို Streamlit Cloud ရဲ့ Secrets ထဲကနေ ယူမှာပါ
-try:
-    api_key = st.secrets["GOOGLE_API_KEY"]
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-except Exception:
-    st.error("API Key ထည့်ရန် လိုအပ်နေပါသည် Zaw။")
+st.title(" Logistics Expert (Zaw x ChatGPT)")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Chat History ပြသခြင်း
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Logistics အကြောင်း မေးမြန်းနိုင်ပါပြီ Zaw..."):
+# User ဆီက အချက်အလက်ယူခြင်း
+if prompt := st.chat_input("Logistics အကြောင်း မေးမြန်းပါ Zaw..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # AI ဆီက အဖြေတောင်းခြင်း
     with st.chat_message("assistant"):
-        try:
-            response = model.generate_content(prompt)
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo", # ဒါမှမဟုတ် gpt-4o-mini
+            messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+        )
+        full_response = response.choices[0].message.content
+        st.markdown(full_response)
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
