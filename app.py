@@ -1,31 +1,39 @@
 import streamlit as st
-from openai import OpenAI
+import google.generativeai as genai
 
-# Streamlit Secrets ကနေ Key ကိုယူမယ်
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Page setting
+st.set_page_config(page_title="Logistics AI Pro", page_icon="")
+st.title(" Logistics Expert (Zaw's Pro)")
 
-st.title(" Logistics Expert (Zaw x ChatGPT)")
+# API Key ကို Secrets ကနေ လုံခြုံစွာယူမယ်
+if "GOOGLE_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+else:
+    st.error("Please add your GOOGLE_API_KEY in Streamlit Secrets!")
 
+# Model ကို အတည်ငြိမ်ဆုံး version ဖြစ်တဲ့ gemini-1.5-flash သုံးမယ်
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# Chat history ကို သိမ်းထားဖို့
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Chat History ပြသခြင်း
+# အရင်ပြောထားတဲ့ စာတွေကို ပြန်ပြဖို့
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# User ဆီက အချက်အလက်ယူခြင်း
-if prompt := st.chat_input("Logistics အကြောင်း မေးမြန်းပါ Zaw..."):
+# User ဆီက အမေးကို လက်ခံဖို့
+if prompt := st.chat_input("Logistics အကြောင်း မေးမြန်းနိုင်ပါပြီ Zaw..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # AI ဆီက အဖြေတောင်းခြင်း
+    # AI ဆီက အဖြေတောင်းဖို့
     with st.chat_message("assistant"):
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo", # ဒါမှမဟုတ် gpt-4o-mini
-            messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-        )
-        full_response = response.choices[0].message.content
-        st.markdown(full_response)
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+        try:
+            response = model.generate_content(prompt)
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            st.error(f"Error: {e}")
