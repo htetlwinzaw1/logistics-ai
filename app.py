@@ -9,7 +9,7 @@ st.title(" Logistics Expert (Zaw's Pro)")
 try:
     api_key = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception:
     st.error("API Key ထည့်ရန် လိုအပ်နေပါသည် Zaw။")
 
